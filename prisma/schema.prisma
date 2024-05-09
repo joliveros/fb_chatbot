@@ -1,0 +1,33 @@
+generator client {
+  provider             = "prisma-client-py"
+  interface            = "sync"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model FacebookUser {
+  id           String           @id @unique
+  photo        String?
+  gender       String?
+  first_name   String?
+  last_name    String?
+  name         String?
+  url          String?
+  threads      FacebookThread[]
+  otherThreads FacebookThread[] @relation("otherUser")
+}
+
+model FacebookThread {
+  id                  String       @id @unique
+  user                FacebookUser @relation(fields: [facebookUserId], references: [id])
+  facebookUserId      String
+  otherUser           FacebookUser @relation(fields: [otherFacebookUserId], references: [id], name: "otherUser")
+  otherFacebookUserId String
+  message             String
+  timestamp           DateTime
+  folder              Json
+}
