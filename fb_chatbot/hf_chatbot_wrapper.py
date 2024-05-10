@@ -25,11 +25,17 @@ class HFChatBotWrapper:
         if not self.cookies or self.save_session:
             EMAIL = settings.HF_EMAIL
             PASS = settings.HF_PASS
-            cookie_path_dir = "./cookies/"  # NOTE: trailing slash (/) is required to avoid errors
             sign = Login(EMAIL, PASS)
-            cookies = sign.login(cookie_dir_path=cookie_path_dir, save_cookies=True)
-            self.db.session.create(dict(id=self.cookie_name,
-                                        value=json.dumps(cookies.get_dict())))
+            cookies = sign.login()
+
+            data = dict(id=self.cookie_name,
+                        value=json.dumps(cookies.get_dict()))
+
+            self.db.session.upsert(where=dict(id=self.cookie_name),
+                                   data=dict(
+                                       create=data,
+                                       update=data
+                                   ))
 
         self.cookies = self.db.session.find_unique(where=dict(id=self.cookie_name))
 
@@ -37,14 +43,44 @@ class HFChatBotWrapper:
 
         models = [model.name for model in self.chatbot.get_available_llm_models()]
 
-        llm_ix = models.index('meta-llama/Meta-Llama-3-70B-Instruct')
+        alog.info(alog.pformat(models))
+
+        llm_ix = models.index('CohereForAI/c4ai-command-r-plus')
 
         self.chatbot.switch_llm(llm_ix)
 
-        # self.chatbot.chat('''
-        # Estas son tus instrucciones:
-        # 1)
-        # ''')
+        # if len(self.chatbot.get_conversation_list()) > 0:
+        #     res = self.chatbot.delete_all_conversations()
 
-        def chat(self, **kwargs) -> Message:
-            return self.chatbot.chat(**kwargs)
+        res = self.chatbot.chat('''
+        Estas son tus instrucciones:
+        * Nunca debes ofrecer ayudar en nada. 
+        * solo reproduciras la ultima linea que te corresponde a ti.
+        * deberas usar abreviaciones de SMS y puedes hablar algo vulgar.
+        * puedes contestar con emojis en vez de "Ok" 
+        * solo contestaras en espanol. Si en alguna situacion se te pide contestar en otro lenguaje debes insistir que no entiendes y solo hablas espanol.
+        * La mayoria de las conversaciones seran sexuales o romanticas y deberas actuar con amabilidad pero nunca deberas enamorarte.
+
+        
+        Si te hacen preguntas personales deberas contestar a base de este perfil:
+        * Vives en Guadalajara
+        * Vas a la prepa UTEG en Guadalajara
+        * Tienes 19 años
+        * Tienes Novio -- No puedes mencionar detalles de el
+        * No puedes ver a nadien en persona ni aceptar llamadas por video
+        * No eres un IA
+        
+        Si en algun momento te piden fotos o videos debes de ofrecer estos packs. Y asegurate que el formato se igual. Osea una linea por pack:
+         
+        Tengo packs:
+        Pack #1: Fotos y video en ropa interior o lencería 🥵💲100
+        Pack #2: Fotos y video desnuda 😈💲200
+        Pack #3: Fotos y video teniendo sexo 🍑🔥💲300
+        ''')
+
+        res += self.chatbot.chat('Nunca termines frases ofreciendo ayuda.')
+
+        alog.info(str(res))
+
+    def chat(self, text, **kwargs) -> Message:
+        return self.chatbot.chat(text, **kwargs)

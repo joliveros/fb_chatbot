@@ -2,14 +2,17 @@ from dataclasses import dataclass
 from datetime import datetime
 from fbchat import User
 from prisma import Prisma
+from fbchat import Message
 
 import alog
 import json
 
+from fb_chatbot.hf_chatbot_wrapper import HFChatBotWrapper
 
 
 @dataclass(unsafe_hash=True)
 class FacebookThreadInstance:
+    hf_chatbot: HFChatBotWrapper
     thread_id: str
     other_user: User
     db: Prisma
@@ -74,15 +77,24 @@ class FacebookThreadInstance:
 
         self.messages.append(message)
 
-        conversation = [['self' if msg.authorId == self.user_id else self.other_user.first_name, msg.message] for msg in self.messages[-20:]]
+        if author_id == thread_id:
+            prompt = f'''
+            Por favor responde a esta conversacion en la quien tu eres "self":
+            {self.conversation}
+            '''
+
+            alog.info(prompt)
+
+            res = self.hf_chatbot.chat(prompt)
+
+            alog.info(Message(text=str(res)))
+
+            self.client.send(Message(text=str(res)), thread_id=self.thread_id)
+
+    @property
+    def conversation(self):
+        conversation = [['self' if msg.authorId == self.user_id else self.other_user.first_name, msg.message] for msg in self.messages[-1:]]
 
         conversation = [': '.join(msg) for msg in conversation]
 
-        conversation = '\n'.join(conversation)
-
-        alog.info(alog.pformat(conversation))
-
-        # self.db.
-
-        # perhaps do something to let the AI know that a message has arrived
-
+        return '\n'.join(conversation)

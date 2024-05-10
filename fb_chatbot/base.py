@@ -33,8 +33,14 @@ class FacebookChatBot(Client):
                          **kwargs)
 
         if save_session or not session_cookies:
-            session_cookies=self.db.session.create(dict(id=settings.FACEBOOK_EMAIL,
-                                        value=json.dumps(self.getSession()))).value
+            data = dict(id=settings.FACEBOOK_EMAIL,
+                        value=json.dumps(self.getSession()))
+            session_cookies=self.db.session.upsert(where=dict(id=settings.FACEBOOK_EMAIL),
+                                                   data=dict(
+                                                       update=data,
+                                                       create=data
+                                                   )
+                                                   ).value
 
         self.update_user_info()
 
@@ -68,6 +74,7 @@ class FacebookChatBot(Client):
 
             thread = self.threads[thread_id] = \
                 FacebookThreadInstance(
+                    hf_chatbot=self.hf_chatbot,
                     user_id=self.uid,
                     thread_id=thread_id,
                     other_user=other_user,
