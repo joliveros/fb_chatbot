@@ -10,24 +10,42 @@ datasource db {
 }
 
 model FacebookUser {
-  id           String           @id @unique
-  photo        String?
-  gender       String?
-  first_name   String?
-  last_name    String?
-  name         String?
-  url          String?
-  threads      FacebookThread[]
-  otherThreads FacebookThread[] @relation("otherUser")
+  id              String            @id @unique
+  photo           String?
+  gender          String?
+  first_name      String?
+  last_name       String?
+  name            String?
+  url             String?
+  threads         FacebookThread[]
+  otherThreads    FacebookThread[]  @relation("otherUser")
+  FacebookMessage FacebookMessage[]
 }
 
 model FacebookThread {
-  id                  String       @id @unique
-  user                FacebookUser @relation(fields: [facebookUserId], references: [id])
+  id                  String            @id @unique
+  user                FacebookUser      @relation(fields: [facebookUserId], references: [id])
   facebookUserId      String
-  otherUser           FacebookUser @relation(fields: [otherFacebookUserId], references: [id], name: "otherUser")
+  otherUser           FacebookUser      @relation(fields: [otherFacebookUserId], references: [id], name: "otherUser")
   otherFacebookUserId String
-  message             String
-  timestamp           DateTime
-  folder              Json
+  createdAt           DateTime          @default(now())
+  FacebookMessage     FacebookMessage[]
+}
+
+model FacebookMessage {
+  id        String         @id @unique
+  author    FacebookUser   @relation(fields: [authorId], references: [id])
+  authorId  String
+  thread    FacebookThread @relation(fields: [threadId], references: [id])
+  threadId  String
+  message   String
+  timestamp DateTime
+  folder    Json
+}
+
+model Session {
+  id         String   @id @unique
+  updated_at DateTime @default(now())
+  created_at DateTime @default(now())
+  value      Json
 }
