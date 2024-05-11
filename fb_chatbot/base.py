@@ -46,6 +46,34 @@ class FacebookChatBot(Client):
 
         self.hf_chatbot = HFChatBotWrapper(save_session=save_session, db=self.db)
 
+        # check all threads
+        threads = self.db.facebookthread.find_many(include=dict(
+            FacebookMessage=dict(
+                orderBy=dict(timestamp='desc'),
+                take=1
+            )
+        ))
+        
+        for thread in threads:
+            if len(thread.FacebookMessage) > 0:
+                authorId = thread.FacebookMessage[-1].authorId
+                thread_id = thread.id
+
+                if self.uid is not authorId:
+                    # alog.info(f'## should respond {thread.id}##')
+                    other_user = self.fetchUserInfo(thread_id)[thread_id]
+                    thread = self.threads[thread_id] = \
+                        FacebookThreadInstance(
+                            hf_chatbot=self.hf_chatbot,
+                            user_id=self.uid,
+                            thread_id=thread.id,
+                            other_user=other_user,
+                            db=self.db,
+                            client=self
+                        )
+
+                    thread.respond_to_conversation()
+
     def update_user_info(self):
         user = self.fetchUserInfo(self.uid)[self.uid]
         data = dict(

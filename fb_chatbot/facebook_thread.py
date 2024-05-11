@@ -78,18 +78,17 @@ class FacebookThreadInstance:
         self.messages.append(message)
 
         if author_id == thread_id:
-            prompt = f'''
+            self.respond_to_conversation()
+
+    def respond_to_conversation(self):
+        prompt = f'''
             Por favor responde a esta conversacion en la quien tu eres "self":
             {self.conversation}
             '''
-
-            alog.info(prompt)
-
-            res = self.hf_chatbot.chat(prompt)
-
-            alog.info(Message(text=str(res)))
-
-            self.client.send(Message(text=str(res)), thread_id=self.thread_id)
+        alog.info(prompt)
+        res = self.hf_chatbot.chat(prompt)
+        alog.info(Message(text=str(res)))
+        self.client.send(Message(text=str(res)), thread_id=self.thread_id)
 
     @property
     def conversation(self):
