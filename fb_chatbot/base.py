@@ -47,13 +47,15 @@ class FacebookChatBot(Client):
         self.hf_chatbot = HFChatBotWrapper(save_session=save_session, db=self.db)
 
         # check all threads
+        # self.respond_to_open_threads()
+
+    def respond_to_open_threads(self):
         threads = self.db.facebookthread.find_many(include=dict(
             FacebookMessage=dict(
-                orderBy=dict(timestamp='desc'),
+                orderBy=dict(timestamp='asc'),
                 take=1
             )
         ))
-        
         for thread in threads:
             if len(thread.FacebookMessage) > 0:
                 authorId = thread.FacebookMessage[-1].authorId
