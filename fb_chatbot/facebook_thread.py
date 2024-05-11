@@ -93,7 +93,7 @@ class FacebookThreadInstance:
 
     @property
     def conversation(self):
-        conversation = [['self' if msg.authorId == self.user_id else self.other_user.first_name, msg.message] for msg in self.messages[-1:]]
+        conversation = [['self' if msg.authorId == self.user_id else self.other_user.first_name, msg.message] for msg in self.messages[-5:]]
 
         conversation = [': '.join(msg) for msg in conversation]
 

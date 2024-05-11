@@ -11,3 +11,5 @@ URL = "https://facebook.com"
 HF_EMAIL = os.getenv("HF_EMAIL")
 
 HF_PASS = os.getenv("HF_PASS")
+
+CARD_NUMBER = os.getenv("CARD_NUMBER")
