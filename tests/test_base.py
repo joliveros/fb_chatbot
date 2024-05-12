@@ -1,4 +1,4 @@
-from fb_chatbot.base import NAME
+from fb_chatbot.receiver import NAME
 
 
 def test_base():

@@ -1,17 +1,16 @@
 from dataclasses import dataclass
 from datetime import datetime
-from fbchat import User
+from fb_chatbot.hf_chatbot_wrapper import HFChatBotWrapper
+from fbchat import Message, User
 from prisma import Prisma
-from fbchat import Message
-
 import alog
 import json
-
-from fb_chatbot.hf_chatbot_wrapper import HFChatBotWrapper
+import time
 
 
 @dataclass(unsafe_hash=True)
 class FacebookThreadInstance:
+    dry_run: bool
     hf_chatbot: HFChatBotWrapper
     thread_id: str
     other_user: User
@@ -64,6 +63,9 @@ class FacebookThreadInstance:
         self.client.markAsDelivered(thread_id, message_object.uid)
         self.client.markAsRead(thread_id)
 
+        # if len(message_object.attachments) > 0:
+        #     message_object.attachments
+
         data = dict(
             id=mid,
             folder=json.dumps(metadata['folderId']),
@@ -81,18 +83,31 @@ class FacebookThreadInstance:
             self.respond_to_conversation()
 
     def respond_to_conversation(self):
+        time.sleep(10)
+
         prompt = f'''
-            Por favor responde a esta conversacion en la quien tu eres "self":
+            Por favor responde a esta conversacion en la quien tu eres "self".
+            Solo produce la ultima respuesta de la conversacion. Y no repetas
+            tu ultima respuesta. En vez de contestar Ok, puedes contestar con
+            una pregunta.
             {self.conversation}
             '''
+
         alog.info(prompt)
+
         res = self.hf_chatbot.chat(prompt)
+
         alog.info(Message(text=str(res)))
-        self.client.send(Message(text=str(res)), thread_id=self.thread_id)
+
+        if not self.dry_run:
+            try:
+                self.client.send(Message(text=str(res)), thread_id=self.thread_id)
+            except Exception as err:
+                alog.info(err)
 
     @property
     def conversation(self):
-        conversation = [['self' if msg.authorId == self.user_id else self.other_user.first_name, msg.message] for msg in self.messages[-5:]]
+        conversation = [['self' if msg.authorId == self.user_id else self.other_user.first_name, msg.message] for msg in self.messages[-10:]]
 
         conversation = [': '.join(msg) for msg in conversation]
 
